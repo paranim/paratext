@@ -1,12 +1,9 @@
-# This is just an example to get you started. You may wish to put all of your
-# tests into a single file, or separate them into multiple `test1`, `test2`
-# etc. files (better names are recommended, just make sure the name starts with
-# the letter 't').
-#
-# To run these tests, simply execute `nimble test`.
+const ttf = staticRead("Roboto-Regular.ttf")
 
 import unittest
 
 import paratext
-test "can add":
-  check add(5, 5) == 10
+
+test "load font":
+  var info = stbtt_fontinfo()
+  doAssert 1 == stbtt_InitFont(info.addr, ttf, 0)
