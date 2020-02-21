@@ -28,5 +28,18 @@ type
     fontdicts*: stbtt_buf     ##  array of font dicts
     fdselect*: stbtt_buf      ##  map from glyph to fontdict
 
+  stbtt_bakedchar* {.bycopy.} = object
+    x0*: cushort
+    y0*: cushort
+    x1*: cushort
+    y1*: cushort
+    xoff*: cfloat
+    yoff*: cfloat
+    xadvance*: cfloat
+
 proc stbtt_InitFont*(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
+
+proc stbtt_BakeFontBitmap*(data: cstring; offset: cint; pixel_height: cfloat;
+                           pixels: ptr cuchar; pw: cint; ph: cint; first_char: cint;
+                           num_chars: cint; chardata: ptr stbtt_bakedchar): cint {.cdecl, importc: "stbtt_BakeFontBitmap".}
 
