@@ -1,12 +1,12 @@
 {.compile: "stb_truetype.c".}
 
 type
-  stbtt_buf* {.bycopy.} = object
+  stbtt_buf {.bycopy.} = object
     data*: ptr cuchar
     cursor*: cint
     size*: cint
 
-  stbtt_fontinfo* {.bycopy.} = object
+  stbtt_fontinfo {.bycopy.} = object
     userdata*: pointer
     data*: ptr cuchar         ##  pointer to .ttf file
     fontstart*: cint          ##  offset of start of font
@@ -28,7 +28,7 @@ type
     fontdicts*: stbtt_buf     ##  array of font dicts
     fdselect*: stbtt_buf      ##  map from glyph to fontdict
 
-  stbtt_bakedchar* {.bycopy.} = object
+  stbtt_bakedchar {.bycopy.} = object
     x0*: cushort
     y0*: cushort
     x1*: cushort
@@ -37,13 +37,47 @@ type
     yoff*: cfloat
     xadvance*: cfloat
 
-proc stbtt_InitFont*(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
+  Font* = object
+    bakedChars*: seq[stbtt_bakedchar]
+    bakeResult: cint
+    ascent*: cint
+    descent*: cint
+    lineGap*: cint
+    scale*: cfloat
+    baseline*: cfloat
+    fontHeight: cfloat
+    bitmapWidth*: int
+    bitmapHeight*: int
+    charCount*: int
 
-proc stbtt_BakeFontBitmap*(data: cstring; offset: cint; pixel_height: cfloat;
-                           pixels: ptr cuchar; pw: cint; ph: cint; first_char: cint;
-                           num_chars: cint; chardata: ptr stbtt_bakedchar): cint {.cdecl, importc: "stbtt_BakeFontBitmap".}
+proc stbtt_InitFont(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
 
-proc stbtt_GetFontVMetrics*(info: ptr stbtt_fontinfo; ascent: ptr cint;
-                            descent: ptr cint; lineGap: ptr cint) {.cdecl, importc: "stbtt_GetFontVMetrics".}
+proc stbtt_BakeFontBitmap(data: cstring; offset: cint; pixelHeight: cfloat;
+                          pixels: ptr cuchar; pw: cint; ph: cint; firstChar: cint;
+                          numChars: cint; chardata: ptr stbtt_bakedchar): cint {.cdecl, importc: "stbtt_BakeFontBitmap".}
 
-proc stbtt_ScaleForPixelHeight*(info: ptr stbtt_fontinfo; pixels: cfloat): cfloat {.cdecl, importc: "stbtt_ScaleForPixelHeight".}
+proc stbtt_GetFontVMetrics(info: ptr stbtt_fontinfo; ascent: ptr cint;
+                           descent: ptr cint; lineGap: ptr cint) {.cdecl, importc: "stbtt_GetFontVMetrics".}
+
+proc stbtt_ScaleForPixelHeight(info: ptr stbtt_fontinfo; pixels: cfloat): cfloat {.cdecl, importc: "stbtt_ScaleForPixelHeight".}
+
+proc initFont*(ttf: cstring, fontHeight: cfloat, firstChar: cint, bitmapWidth: static[int], bitmapHeight: static[int], charCount: static[int]): Font =
+  var info = stbtt_fontinfo()
+  doAssert 1 == stbtt_InitFont(info = info.addr, data = ttf, offset = 0)
+
+  var tempBitmap: array[bitmapWidth * bitmapHeight, cuchar]
+  var cdata: array[charCount, stbtt_bakedchar]
+  result.bakeResult = stbtt_BakeFontBitmap(data = ttf, offset = 0, pixelHeight = fontHeight,
+                                           pixels = tempBitmap[0].addr, pw = bitmapWidth, ph = bitmapHeight, firstChar = firstChar,
+                                           numChars = charCount, chardata = cdata[0].addr)
+  for i in 0 ..< cdata.len:
+    result.bakedChars.add(cdata[i])
+
+  stbtt_GetFontVMetrics(info = info.addr, ascent = result.ascent.addr,
+                        descent = result.descent.addr, lineGap = result.lineGap.addr)
+  result.scale = stbtt_ScaleForPixelHeight(info = info.addr, pixels = fontHeight)
+  result.baseline = result.ascent.cfloat * result.scale
+  result.fontHeight = fontHeight
+  result.bitmapWidth = bitmapWidth
+  result.bitmapHeight = bitmapHeight
+  result.charCount = charCount
