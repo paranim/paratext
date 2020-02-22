@@ -48,6 +48,7 @@ type
     fontHeight: cfloat
     bitmap*: tuple[width: cint, height: cint, data: seq[uint8]]
     charCount*: cint
+    firstChar*: cint
 
 proc stbtt_InitFont(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
 
@@ -78,3 +79,4 @@ proc initFont*(ttf: cstring, fontHeight: cfloat, firstChar: cint, bitmapWidth: s
   result.baseline = result.ascent.cfloat * result.scale
   result.fontHeight = fontHeight
   result.charCount = charCount
+  result.firstChar = firstChar

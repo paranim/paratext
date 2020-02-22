@@ -1,4 +1,6 @@
 import paranim/gl, paranim/gl/uniforms, paranim/gl/attributes
+from paranim/gl/entities import nil
+from paranim/math as pmath import nil
 from paranim/primitives import nil
 import paratext
 import nimgl/opengl
@@ -17,7 +19,13 @@ type
   TextEntity* = object of ArrayEntity[TextEntityUniforms, TextEntityAttributes]
   UncompiledTextEntity* = object of UncompiledEntity[TextEntity, TextEntityUniforms, TextEntityAttributes]
   InstancedTextEntityUniforms = tuple[u_matrix: Uniform[Mat3x3[GLfloat]], u_image: Uniform[Texture[GLubyte]]]
-  InstancedTextEntityAttributes = tuple[a_position: Attribute[GLfloat], a_matrix: Attribute[GLfloat], a_texture_matrix: Attribute[GLfloat]]
+  InstancedTextEntityAttributes = tuple[
+    a_position: Attribute[GLfloat],
+    a_translate_matrix: Attribute[GLfloat],
+    a_scale_matrix: Attribute[GLfloat],
+    a_texture_matrix: Attribute[GLfloat],
+    a_color: Attribute[GLfloat]
+  ]
   InstancedTextEntity* = object of InstancedEntity[InstancedTextEntityUniforms, InstancedTextEntityAttributes]
   UncompiledInstancedTextEntity* = object of UncompiledEntity[InstancedTextEntity, InstancedTextEntityUniforms, InstancedTextEntityAttributes]
 
@@ -136,3 +144,102 @@ const instancedTextFragmentShader =
     }
   }
   """
+
+proc initInstancedEntity*(entity: UncompiledTextEntity): UncompiledInstancedTextEntity =
+  result.vertexSource = instancedTextVertexShader
+  result.fragmentSource = instancedTextFragmentShader
+  result.uniforms.u_matrix = entity.uniforms.u_matrix
+  result.uniforms.u_image = entity.uniforms.u_image
+  result.attributes.a_translate_matrix = Attribute[GLfloat](disable: true, divisor: 1, size: 3, iter: 3)
+  new(result.attributes.a_translate_matrix.data)
+  result.attributes.a_scale_matrix = Attribute[GLfloat](disable: true, divisor: 1, size: 3, iter: 3)
+  new(result.attributes.a_scale_matrix.data)
+  result.attributes.a_texture_matrix = Attribute[GLfloat](disable: true, divisor: 1, size: 3, iter: 3)
+  new(result.attributes.a_texture_matrix.data)
+  result.attributes.a_color = Attribute[GLfloat](disable: true, divisor: 1, size: 4, iter: 1)
+  new(result.attributes.a_color.data)
+  deepCopy(result.attributes.a_position, entity.attributes.a_position)
+
+proc addInstanceAttr[T](attr: var Attribute[T], uni: Uniform[Mat3x3[T]]) =
+  for r in 0 .. 2:
+    for c in 0 .. 2:
+      attr.data[].add(uni.data.row(r)[c])
+  attr.disable = false
+
+proc addInstanceAttr[T](attr: var Attribute[T], uni: Uniform[Vec4[T]]) =
+  for x in 0 .. 3:
+    attr.data[].add(uni.data[x])
+  attr.disable = false
+
+proc setInstanceAttr[T](attr: var Attribute[T], i: int, uni: Uniform[Mat3x3[T]]) =
+  for r in 0 .. 2:
+    for c in 0 .. 2:
+      attr.data[r*3+c+i*9] = uni.data.row(r)[c]
+  attr.disable = false
+
+proc setInstanceAttr[T](attr: var Attribute[T], i: int, uni: Uniform[Vec4[T]]) =
+  for x in 0 .. 3:
+    attr.data[x+i*4] = uni.data[x]
+  attr.disable = false
+
+proc getInstanceAttr[T](attr: Attribute[T], i: int, uni: var Uniform[Mat3x3[T]]) =
+  for r in 0 .. 2:
+    for c in 0 .. 2:
+      uni.data[r][c] = attr.data[r*3+c+i*9]
+  uni.data = uni.data.transpose()
+  uni.disable = false
+
+proc getInstanceAttr[T](attr: Attribute[T], i: int, uni: var Uniform[Vec4[T]]) =
+  for x in 0 .. 3:
+    uni.data[x] = attr.data[x+i*4]
+  uni.disable = false
+
+proc add*(instancedEntity: var UncompiledInstancedTextEntity, entity: UncompiledTextEntity) =
+  addInstanceAttr(instancedEntity.attributes.a_translate_matrix, entity.uniforms.u_translate_matrix)
+  addInstanceAttr(instancedEntity.attributes.a_scale_matrix, entity.uniforms.u_scale_matrix)
+  addInstanceAttr(instancedEntity.attributes.a_texture_matrix, entity.uniforms.u_texture_matrix)
+  addInstanceAttr(instancedEntity.attributes.a_color, entity.uniforms.u_color)
+  # instanceCount will be computed by the `compile` proc
+
+proc add*(instancedEntity: var InstancedTextEntity, entity: UncompiledTextEntity) =
+  addInstanceAttr(instancedEntity.attributes.a_translate_matrix, entity.uniforms.u_translate_matrix)
+  addInstanceAttr(instancedEntity.attributes.a_scale_matrix, entity.uniforms.u_scale_matrix)
+  addInstanceAttr(instancedEntity.attributes.a_texture_matrix, entity.uniforms.u_texture_matrix)
+  addInstanceAttr(instancedEntity.attributes.a_color, entity.uniforms.u_color)
+  instancedEntity.instanceCount += 1
+
+proc `[]`*(instancedEntity: InstancedTextEntity or UncompiledInstancedTextEntity, i: int): UncompiledTextEntity =
+  result.vertexSource = textVertexShader
+  result.fragmentSource = textFragmentShader
+  result.attributes.a_position = instancedEntity.attributes.a_position
+  result.attributes.a_position.disable = false
+  result.uniforms.u_image = instancedEntity.uniforms.u_image
+  result.uniforms.u_image.disable = false
+  getInstanceAttr(instancedEntity.attributes.a_translate_matrix, i, result.uniforms.u_translate_matrix)
+  getInstanceAttr(instancedEntity.attributes.a_scale_matrix, i, result.uniforms.u_scale_matrix)
+  getInstanceAttr(instancedEntity.attributes.a_texture_matrix, i, result.uniforms.u_texture_matrix)
+  getInstanceAttr(instancedEntity.attributes.a_color, i, result.uniforms.u_color)
+
+proc `[]=`*(instancedEntity: var InstancedTextEntity, i: int, entity: UncompiledTextEntity) =
+  setInstanceAttr(instancedEntity.attributes.a_translate_matrix, i, entity.uniforms.u_translate_matrix)
+  setInstanceAttr(instancedEntity.attributes.a_scale_matrix, i, entity.uniforms.u_scale_matrix)
+  setInstanceAttr(instancedEntity.attributes.a_texture_matrix, i, entity.uniforms.u_texture_matrix)
+  setInstanceAttr(instancedEntity.attributes.a_color, i, entity.uniforms.u_color)
+
+proc `[]=`*(instancedEntity: var UncompiledInstancedTextEntity, i: int, entity: UncompiledTextEntity) =
+  setInstanceAttr(instancedEntity.attributes.a_translate_matrix, i, entity.uniforms.u_translate_matrix)
+  setInstanceAttr(instancedEntity.attributes.a_scale_matrix, i, entity.uniforms.u_scale_matrix)
+  setInstanceAttr(instancedEntity.attributes.a_texture_matrix, i, entity.uniforms.u_texture_matrix)
+  setInstanceAttr(instancedEntity.attributes.a_color, i, entity.uniforms.u_color)
+
+proc crop*(entity: var UncompiledTextEntity, font: Font, ch: char) =
+  let
+    charCode = int(ch) - font.firstChar
+    bakedChar = font.bakedChars[charCode]
+    x = GLfloat(bakedChar.x0)
+    y = GLfloat(bakedChar.y0)
+    width = GLfloat(bakedChar.x1 - bakedChar.x0)
+    height = GLfloat(bakedChar.y1 - bakedChar.y0)
+  entities.crop(entity, x, y, width, height)
+  pmath.scale(entity.uniforms.u_scale_matrix.data, width, height)
+  pmath.translate(entity.uniforms.u_translate_matrix.data, bakedChar.xoff, font.baseline + bakedChar.yoff)
