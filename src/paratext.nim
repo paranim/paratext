@@ -2,13 +2,13 @@
 
 type
   stbtt_buf {.bycopy.} = object
-    data*: ptr cuchar
+    data*: ptr uint8
     cursor*: cint
     size*: cint
 
   stbtt_fontinfo {.bycopy.} = object
     userdata*: pointer
-    data*: ptr cuchar         ##  pointer to .ttf file
+    data*: ptr uint8          ##  pointer to .ttf file
     fontstart*: cint          ##  offset of start of font
     numGlyphs*: cint          ##  number of glyphs, needed for range checking
     loca*: cint
@@ -46,13 +46,13 @@ type
     scale*: cfloat
     baseline*: cfloat
     fontHeight: cfloat
-    bitmap*: tuple[width: cint, height: cint, data: seq[cuchar]]
+    bitmap*: tuple[width: cint, height: cint, data: seq[uint8]]
     charCount*: cint
 
 proc stbtt_InitFont(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
 
 proc stbtt_BakeFontBitmap(data: cstring; offset: cint; pixelHeight: cfloat;
-                          pixels: ptr cuchar; pw: cint; ph: cint; firstChar: cint;
+                          pixels: ptr uint8; pw: cint; ph: cint; firstChar: cint;
                           numChars: cint; chardata: ptr stbtt_bakedchar): cint {.cdecl, importc: "stbtt_BakeFontBitmap".}
 
 proc stbtt_GetFontVMetrics(info: ptr stbtt_fontinfo; ascent: ptr cint;
@@ -64,7 +64,7 @@ proc initFont*(ttf: cstring, fontHeight: cfloat, firstChar: cint, bitmapWidth: s
   var info = stbtt_fontinfo()
   doAssert 1 == stbtt_InitFont(info = info.addr, data = ttf, offset = 0)
 
-  result.bitmap = (bitmapWidth.cint, bitmapHeight.cint, newSeq[cuchar](bitmapWidth * bitmapHeight))
+  result.bitmap = (bitmapWidth.cint, bitmapHeight.cint, newSeq[uint8](bitmapWidth * bitmapHeight))
   var cdata: array[charCount, stbtt_bakedchar]
   result.bakeResult = stbtt_BakeFontBitmap(data = ttf, offset = 0, pixelHeight = fontHeight,
                                            pixels = result.bitmap.data[0].addr, pw = result.bitmap.width, ph = result.bitmap.height, firstChar = firstChar,
