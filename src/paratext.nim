@@ -43,3 +43,7 @@ proc stbtt_BakeFontBitmap*(data: cstring; offset: cint; pixel_height: cfloat;
                            pixels: ptr cuchar; pw: cint; ph: cint; first_char: cint;
                            num_chars: cint; chardata: ptr stbtt_bakedchar): cint {.cdecl, importc: "stbtt_BakeFontBitmap".}
 
+proc stbtt_GetFontVMetrics*(info: ptr stbtt_fontinfo; ascent: ptr cint;
+                            descent: ptr cint; lineGap: ptr cint) {.cdecl, importc: "stbtt_GetFontVMetrics".}
+
+proc stbtt_ScaleForPixelHeight*(info: ptr stbtt_fontinfo; pixels: cfloat): cfloat {.cdecl, importc: "stbtt_ScaleForPixelHeight".}
