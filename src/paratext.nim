@@ -46,9 +46,8 @@ type
     scale*: cfloat
     baseline*: cfloat
     fontHeight: cfloat
-    bitmapWidth*: int
-    bitmapHeight*: int
-    charCount*: int
+    bitmap*: tuple[width: cint, height: cint, data: seq[cuchar]]
+    charCount*: cint
 
 proc stbtt_InitFont(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
 
@@ -65,10 +64,10 @@ proc initFont*(ttf: cstring, fontHeight: cfloat, firstChar: cint, bitmapWidth: s
   var info = stbtt_fontinfo()
   doAssert 1 == stbtt_InitFont(info = info.addr, data = ttf, offset = 0)
 
-  var tempBitmap: array[bitmapWidth * bitmapHeight, cuchar]
+  result.bitmap = (bitmapWidth.cint, bitmapHeight.cint, newSeq[cuchar](bitmapWidth * bitmapHeight))
   var cdata: array[charCount, stbtt_bakedchar]
   result.bakeResult = stbtt_BakeFontBitmap(data = ttf, offset = 0, pixelHeight = fontHeight,
-                                           pixels = tempBitmap[0].addr, pw = bitmapWidth, ph = bitmapHeight, firstChar = firstChar,
+                                           pixels = result.bitmap.data[0].addr, pw = result.bitmap.width, ph = result.bitmap.height, firstChar = firstChar,
                                            numChars = charCount, chardata = cdata[0].addr)
   for i in 0 ..< cdata.len:
     result.bakedChars.add(cdata[i])
@@ -78,6 +77,4 @@ proc initFont*(ttf: cstring, fontHeight: cfloat, firstChar: cint, bitmapWidth: s
   result.scale = stbtt_ScaleForPixelHeight(info = info.addr, pixels = fontHeight)
   result.baseline = result.ascent.cfloat * result.scale
   result.fontHeight = fontHeight
-  result.bitmapWidth = bitmapWidth
-  result.bitmapHeight = bitmapHeight
   result.charCount = charCount
