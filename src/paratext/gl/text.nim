@@ -1,6 +1,5 @@
 import paranim/gl, paranim/gl/uniforms, paranim/gl/attributes
-from paranim/gl/entities import nil
-from paranim/math as pmath import nil
+from paranim/gl/entities import crop
 from paranim/primitives import nil
 import paratext
 import nimgl/opengl
@@ -232,6 +231,12 @@ proc `[]=`*(instancedEntity: var UncompiledInstancedTextEntity, i: int, entity: 
   setInstanceAttr(instancedEntity.attributes.a_texture_matrix, i, entity.uniforms.u_texture_matrix)
   setInstanceAttr(instancedEntity.attributes.a_color, i, entity.uniforms.u_color)
 
+proc translate*(entity: var UncompiledTextEntity, x: GLfloat, y: GLfloat) =
+  entity.uniforms.u_translate_matrix.translate(x, y)
+
+proc scale(entity: var UncompiledTextEntity, x: GLfloat, y: GLfloat) =
+  entity.uniforms.u_scale_matrix.scale(x, y)
+
 proc crop*(entity: var UncompiledTextEntity, font: Font, ch: char) =
   let
     charCode = int(ch) - font.firstChar
@@ -240,6 +245,6 @@ proc crop*(entity: var UncompiledTextEntity, font: Font, ch: char) =
     y = GLfloat(bakedChar.y0)
     width = GLfloat(bakedChar.x1 - bakedChar.x0)
     height = GLfloat(bakedChar.y1 - bakedChar.y0)
-  entities.crop(entity, x, y, width, height)
-  pmath.scale(entity.uniforms.u_scale_matrix.data, width, height)
-  pmath.translate(entity.uniforms.u_translate_matrix.data, bakedChar.xoff, font.baseline + bakedChar.yoff)
+  entity.crop(x, y, width, height)
+  entity.scale(width, height)
+  entity.translate(bakedChar.xoff, font.baseline + bakedChar.yoff)
