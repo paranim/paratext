@@ -231,18 +231,13 @@ proc `[]=`*(instancedEntity: var UncompiledInstancedTextEntity, i: int, entity: 
   setInstanceAttr(instancedEntity.attributes.a_texture_matrix, i, entity.uniforms.u_texture_matrix)
   setInstanceAttr(instancedEntity.attributes.a_color, i, entity.uniforms.u_color)
 
-proc translate*(entity: var UncompiledTextEntity, x: GLfloat, y: GLfloat) =
-  entity.uniforms.u_translate_matrix.translate(x, y)
-
-proc scale(entity: var UncompiledTextEntity, x: GLfloat, y: GLfloat) =
-  entity.uniforms.u_scale_matrix.scale(x, y)
-
-proc crop*(entity: var UncompiledTextEntity, bakedChar: BakedChar) =
+proc crop*(entity: var UncompiledTextEntity, bakedChar: BakedChar, x: GLfloat, y: GLfloat) =
   let
-    x = GLfloat(bakedChar.x0)
-    y = GLfloat(bakedChar.y0)
+    cropX = GLfloat(bakedChar.x0)
+    cropY = GLfloat(bakedChar.y0)
     width = GLfloat(bakedChar.x1 - bakedChar.x0)
     height = GLfloat(bakedChar.y1 - bakedChar.y0)
-  entity.crop(x, y, width, height)
-  entity.scale(width, height)
-  entity.translate(bakedChar.xoff, bakedChar.yoff)
+  entity.crop(cropX, cropY, width, height)
+  entity.uniforms.u_scale_matrix.scale(width, height)
+  entity.uniforms.u_translate_matrix.translate(bakedChar.xoff, bakedChar.yoff)
+  entity.uniforms.u_translate_matrix.translate(x, y)
