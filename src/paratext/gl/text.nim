@@ -240,7 +240,7 @@ proc scale(entity: var UncompiledTextEntity, x: GLfloat, y: GLfloat) =
 proc crop*(entity: var UncompiledTextEntity, font: Font, ch: char) =
   let
     charCode = int(ch) - font.firstChar
-    bakedChar = font.bakedChars[charCode]
+    bakedChar = font.chars[charCode]
     x = GLfloat(bakedChar.x0)
     y = GLfloat(bakedChar.y0)
     width = GLfloat(bakedChar.x1 - bakedChar.x0)

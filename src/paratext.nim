@@ -38,7 +38,7 @@ type
     xadvance*: cfloat
 
   Font* = object
-    bakedChars*: seq[stbtt_bakedchar]
+    chars*: seq[stbtt_bakedchar]
     bakeResult: cint
     ascent*: cint
     descent*: cint
@@ -47,7 +47,6 @@ type
     baseline*: cfloat
     fontHeight: cfloat
     bitmap*: tuple[width: cint, height: cint, data: seq[uint8]]
-    charCount*: cint
     firstChar*: cint
 
 proc stbtt_InitFont(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
@@ -71,12 +70,11 @@ proc initFont*(ttf: cstring, fontHeight: cfloat, firstChar: cint, bitmapWidth: s
                                            pixels = result.bitmap.data[0].addr, pw = result.bitmap.width, ph = result.bitmap.height, firstChar = firstChar,
                                            numChars = charCount, chardata = cdata[0].addr)
   for i in 0 ..< cdata.len:
-    result.bakedChars.add(cdata[i])
+    result.chars.add(cdata[i])
 
   stbtt_GetFontVMetrics(info = info.addr, ascent = result.ascent.addr,
                         descent = result.descent.addr, lineGap = result.lineGap.addr)
   result.scale = stbtt_ScaleForPixelHeight(info = info.addr, pixels = fontHeight)
   result.baseline = result.ascent.cfloat * result.scale
   result.fontHeight = fontHeight
-  result.charCount = charCount
   result.firstChar = firstChar
