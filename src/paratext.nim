@@ -39,13 +39,13 @@ type
 
   Font*[BitmapN: static[int], CharN: static[int]] = object
     chars*: array[CharN, BakedChar]
-    bakeResult: cint
+    bakeResult*: cint
     ascent*: cint
     descent*: cint
     lineGap*: cint
     scale*: cfloat
     baseline*: cfloat
-    fontHeight: cfloat
+    height*: cfloat
     bitmap*: tuple[width: cint, height: cint, data: array[BitmapN, uint8]]
     firstChar*: cint
 
@@ -80,5 +80,5 @@ proc initFont*(
                         descent = result.descent.addr, lineGap = result.lineGap.addr)
   result.scale = stbtt_ScaleForPixelHeight(info = info.addr, pixels = fontHeight)
   result.baseline = result.ascent.cfloat * result.scale
-  result.fontHeight = fontHeight
+  result.height = fontHeight
   result.firstChar = firstChar
