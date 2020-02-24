@@ -37,7 +37,7 @@ type
     yoff*: cfloat
     xadvance*: cfloat
 
-  Font*[BitmapN: static[int], CharN: static[int]] = object
+  Font*[CharN: static[int]] = object
     chars*: array[CharN, BakedChar]
     bakeResult*: cint
     ascent*: cint
@@ -46,7 +46,7 @@ type
     scale*: cfloat
     baseline*: cfloat
     height*: cfloat
-    bitmap*: tuple[width: cint, height: cint, data: array[BitmapN, uint8]]
+    bitmap*: tuple[width: cint, height: cint, data: seq[uint8]]
     firstChar*: cint
 
 proc stbtt_InitFont(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
@@ -67,12 +67,13 @@ proc initFont*(
       bitmapWidth: static[int],
       bitmapHeight: static[int],
       charCount: static[int]
-    ): Font[bitmapWidth * bitmapHeight, charCount] =
+    ): Font[charCount] =
   var info = stbtt_fontinfo()
   doAssert 1 == stbtt_InitFont(info = info.addr, data = ttf, offset = 0)
 
   result.bitmap.width = bitmapWidth
   result.bitmap.height = bitmapHeight
+  result.bitmap.data = newSeq[uint8](bitmapWidth * bitmapHeight)
   result.bakeResult = stbtt_BakeFontBitmap(data = ttf, offset = 0, pixelHeight = fontHeight,
                                            pixels = result.bitmap.data[0].addr, pw = result.bitmap.width, ph = result.bitmap.height, firstChar = firstChar,
                                            numChars = charCount, chardata = result.chars[0].addr)
