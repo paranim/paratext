@@ -37,7 +37,7 @@ type
     yoff*: cfloat
     xadvance*: cfloat
 
-  Font* = object
+  Font*[N: static[int]] = object
     chars*: seq[BakedChar]
     bakeResult: cint
     ascent*: cint
@@ -46,7 +46,7 @@ type
     scale*: cfloat
     baseline*: cfloat
     fontHeight: cfloat
-    bitmap*: tuple[width: cint, height: cint, data: seq[uint8]]
+    bitmap*: tuple[width: cint, height: cint, data: array[N, uint8]]
     firstChar*: cint
 
 proc stbtt_InitFont(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
@@ -60,11 +60,12 @@ proc stbtt_GetFontVMetrics(info: ptr stbtt_fontinfo; ascent: ptr cint;
 
 proc stbtt_ScaleForPixelHeight(info: ptr stbtt_fontinfo; pixels: cfloat): cfloat {.cdecl, importc: "stbtt_ScaleForPixelHeight".}
 
-proc initFont*(ttf: cstring, fontHeight: cfloat, firstChar: cint, bitmapWidth: static[int], bitmapHeight: static[int], charCount: static[int]): Font =
+proc initFont*(ttf: cstring, fontHeight: cfloat, firstChar: cint, bitmapWidth: static[int], bitmapHeight: static[int], charCount: static[int]): Font[bitmapWidth * bitmapHeight] =
   var info = stbtt_fontinfo()
   doAssert 1 == stbtt_InitFont(info = info.addr, data = ttf, offset = 0)
 
-  result.bitmap = (bitmapWidth.cint, bitmapHeight.cint, newSeq[uint8](bitmapWidth * bitmapHeight))
+  result.bitmap.width = bitmapWidth
+  result.bitmap.height = bitmapHeight
   var cdata: array[charCount, BakedChar]
   result.bakeResult = stbtt_BakeFontBitmap(data = ttf, offset = 0, pixelHeight = fontHeight,
                                            pixels = result.bitmap.data[0].addr, pw = result.bitmap.width, ph = result.bitmap.height, firstChar = firstChar,
