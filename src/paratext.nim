@@ -37,8 +37,8 @@ type
     yoff*: cfloat
     xadvance*: cfloat
 
-  Font*[N: static[int]] = object
-    chars*: seq[BakedChar]
+  Font*[BitmapN: static[int], CharN: static[int]] = object
+    chars*: array[CharN, BakedChar]
     bakeResult: cint
     ascent*: cint
     descent*: cint
@@ -46,7 +46,7 @@ type
     scale*: cfloat
     baseline*: cfloat
     fontHeight: cfloat
-    bitmap*: tuple[width: cint, height: cint, data: array[N, uint8]]
+    bitmap*: tuple[width: cint, height: cint, data: array[BitmapN, uint8]]
     firstChar*: cint
 
 proc stbtt_InitFont(info: ptr stbtt_fontinfo; data: cstring; offset: cint): cint {.cdecl, importc: "stbtt_InitFont".}
@@ -60,19 +60,22 @@ proc stbtt_GetFontVMetrics(info: ptr stbtt_fontinfo; ascent: ptr cint;
 
 proc stbtt_ScaleForPixelHeight(info: ptr stbtt_fontinfo; pixels: cfloat): cfloat {.cdecl, importc: "stbtt_ScaleForPixelHeight".}
 
-proc initFont*(ttf: cstring, fontHeight: cfloat, firstChar: cint, bitmapWidth: static[int], bitmapHeight: static[int], charCount: static[int]): Font[bitmapWidth * bitmapHeight] =
+proc initFont*(
+      ttf: cstring,
+      fontHeight: cfloat,
+      firstChar: cint,
+      bitmapWidth: static[int],
+      bitmapHeight: static[int],
+      charCount: static[int]
+    ): Font[bitmapWidth * bitmapHeight, charCount] =
   var info = stbtt_fontinfo()
   doAssert 1 == stbtt_InitFont(info = info.addr, data = ttf, offset = 0)
 
   result.bitmap.width = bitmapWidth
   result.bitmap.height = bitmapHeight
-  var cdata: array[charCount, BakedChar]
   result.bakeResult = stbtt_BakeFontBitmap(data = ttf, offset = 0, pixelHeight = fontHeight,
                                            pixels = result.bitmap.data[0].addr, pw = result.bitmap.width, ph = result.bitmap.height, firstChar = firstChar,
-                                           numChars = charCount, chardata = cdata[0].addr)
-  for i in 0 ..< cdata.len:
-    result.chars.add(cdata[i])
-
+                                           numChars = charCount, chardata = result.chars[0].addr)
   stbtt_GetFontVMetrics(info = info.addr, ascent = result.ascent.addr,
                         descent = result.descent.addr, lineGap = result.lineGap.addr)
   result.scale = stbtt_ScaleForPixelHeight(info = info.addr, pixels = fontHeight)
