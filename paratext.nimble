@@ -11,4 +11,4 @@ srcDir        = "src"
 # Dependencies
 
 requires "nim >= 1.0.6"
-requires "paranim >= 0.1.0"
+requires "paranim >= 0.2.0"
