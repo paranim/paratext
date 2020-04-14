@@ -30,7 +30,7 @@ type
 
 const textVertexShader =
   """
-  #version 410
+  #version 330
   uniform mat3 u_matrix;
   uniform mat3 u_translate_matrix;
   uniform mat3 u_scale_matrix;
@@ -46,7 +46,7 @@ const textVertexShader =
 
 const textFragmentShader =
   """
-  #version 410
+  #version 330
   precision mediump float;
   uniform sampler2D u_image;
   uniform vec4 u_color;
@@ -105,7 +105,7 @@ proc initTextEntity*(font: Font): UncompiledTextEntity =
 
 const instancedTextVertexShader =
   """
-  #version 410
+  #version 330
   uniform mat3 u_matrix;
   in vec2 a_position;
   in vec4 a_color;
@@ -124,7 +124,7 @@ const instancedTextVertexShader =
 
 const instancedTextFragmentShader =
   """
-  #version 410
+  #version 330
   precision mediump float;
   uniform sampler2D u_image;
   in vec2 v_tex_coord;
