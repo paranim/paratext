@@ -157,7 +157,10 @@ proc initInstancedEntity*(entity: UncompiledTextEntity): UncompiledInstancedText
   new(result.attributes.a_texture_matrix.data)
   result.attributes.a_color = Attribute[GLfloat](disable: true, divisor: 1, size: 4, iter: 1)
   new(result.attributes.a_color.data)
-  deepCopy(result.attributes.a_position, entity.attributes.a_position)
+  result.attributes.a_position = entity.attributes.a_position
+  # do a full copy of the data to avoid unexpected problems
+  new(result.attributes.a_position.data)
+  result.attributes.a_position.data[] = entity.attributes.a_position.data[]
 
 proc addInstanceAttr[T](attr: var Attribute[T], uni: Uniform[Mat3x3[T]]) =
   for r in 0 .. 2:
