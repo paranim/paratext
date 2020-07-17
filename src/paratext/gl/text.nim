@@ -145,10 +145,11 @@ const instancedTextFragmentShader =
   """
 
 proc initInstancedEntity*(entity: UncompiledTextEntity): UncompiledInstancedTextEntity =
+  let e = gl.copy(entity) # make a copy to prevent unexpected problems if `entity` is changed later
   result.vertexSource = instancedTextVertexShader
   result.fragmentSource = instancedTextFragmentShader
-  result.uniforms.u_matrix = entity.uniforms.u_matrix
-  result.uniforms.u_image = entity.uniforms.u_image
+  result.uniforms.u_matrix = e.uniforms.u_matrix
+  result.uniforms.u_image = e.uniforms.u_image
   result.attributes.a_translate_matrix = Attribute[GLfloat](disable: true, divisor: 1, size: 3, iter: 3)
   new(result.attributes.a_translate_matrix.data)
   result.attributes.a_scale_matrix = Attribute[GLfloat](disable: true, divisor: 1, size: 3, iter: 3)
@@ -157,10 +158,7 @@ proc initInstancedEntity*(entity: UncompiledTextEntity): UncompiledInstancedText
   new(result.attributes.a_texture_matrix.data)
   result.attributes.a_color = Attribute[GLfloat](disable: true, divisor: 1, size: 4, iter: 1)
   new(result.attributes.a_color.data)
-  result.attributes.a_position = entity.attributes.a_position
-  # do a full copy of the data to avoid unexpected problems
-  new(result.attributes.a_position.data)
-  result.attributes.a_position.data[] = entity.attributes.a_position.data[]
+  result.attributes.a_position = e.attributes.a_position
 
 proc addInstanceAttr[T](attr: var Attribute[T], uni: Uniform[Mat3x3[T]]) =
   for r in 0 .. 2:
