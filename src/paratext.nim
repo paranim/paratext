@@ -1,4 +1,4 @@
-{.compile: "stb_truetype.c".}
+{.compile: "paratext/stb_truetype.c".}
 
 type
   stbtt_buf {.bycopy.} = object
