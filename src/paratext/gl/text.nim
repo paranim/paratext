@@ -72,7 +72,7 @@ proc initTextEntity*(font: Font): UncompiledTextEntity =
   # create attribute
   var position = Attribute[GLfloat](size: 2, iter: 1)
   new(position.data)
-  position.data[].add(primitives.rectangle[GLfloat]())
+  position.data[] = `@` primitives.rectangle[GLfloat]()
   # create texture
   var image = Texture[GLubyte](
     opts: TextureOpts(
@@ -91,7 +91,7 @@ proc initTextEntity*(font: Font): UncompiledTextEntity =
     ]
   )
   new(image.data)
-  image.data[].add(font.bitmap.data)
+  image.data[] = font.bitmap.data
   # set attributes and uniforms
   result.attributes = (a_position: position)
   result.uniforms = (
