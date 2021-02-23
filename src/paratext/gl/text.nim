@@ -4,6 +4,13 @@ from paranim/primitives import nil
 import paratext
 import nimgl/opengl
 import glm
+from strutils import format
+
+const version =
+  when defined(emscripten):
+    "300 es"
+  else:
+    "330"
 
 type
   TextEntityUniforms = tuple[
@@ -30,7 +37,7 @@ type
 
 const textVertexShader =
   """
-  #version 330
+  #version $1
   uniform mat3 u_matrix;
   uniform mat3 u_translate_matrix;
   uniform mat3 u_scale_matrix;
@@ -42,11 +49,11 @@ const textVertexShader =
     gl_Position = vec4((u_matrix * u_translate_matrix * u_scale_matrix * vec3(a_position, 1)).xy, 0, 1);
     v_tex_coord = (u_texture_matrix * vec3(a_position, 1)).xy;
   }
-  """
+  """.format(version)
 
 const textFragmentShader =
   """
-  #version 330
+  #version $1
   precision mediump float;
   uniform sampler2D u_image;
   uniform vec4 u_color;
@@ -64,7 +71,7 @@ const textFragmentShader =
       o_color = u_color;
     }
   }
-  """
+  """.format(version)
 
 proc initTextEntity*(font: Font): UncompiledTextEntity =
   result.vertexSource = textVertexShader
@@ -77,11 +84,11 @@ proc initTextEntity*(font: Font): UncompiledTextEntity =
   var image = Texture[GLubyte](
     opts: TextureOpts(
       mipLevel: 0,
-      internalFmt: GL_RED,
+      internalFmt: when defined(emscripten): GL_LUMINANCE else: GL_RED,
       width: GLsizei(font.bitmap.width),
       height: GLsizei(font.bitmap.height),
       border: 0,
-      srcFmt: GL_RED
+      srcFmt: when defined(emscripten): GL_LUMINANCE else: GL_RED
     ),
     params: @[
       (GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE),
@@ -105,7 +112,7 @@ proc initTextEntity*(font: Font): UncompiledTextEntity =
 
 const instancedTextVertexShader =
   """
-  #version 330
+  #version $1
   uniform mat3 u_matrix;
   in vec2 a_position;
   in vec4 a_color;
@@ -120,11 +127,11 @@ const instancedTextVertexShader =
     v_tex_coord = (a_texture_matrix * vec3(a_position, 1)).xy;
     v_color = a_color;
   }
-  """
+  """.format(version)
 
 const instancedTextFragmentShader =
   """
-  #version 330
+  #version $1
   precision mediump float;
   uniform sampler2D u_image;
   in vec2 v_tex_coord;
@@ -142,7 +149,7 @@ const instancedTextFragmentShader =
       o_color = v_color;
     }
   }
-  """
+  """.format(version)
 
 proc initInstancedEntity*(entity: UncompiledTextEntity): UncompiledInstancedTextEntity =
   let e = gl.copy(entity) # make a copy to prevent unexpected problems if `entity` is changed later
