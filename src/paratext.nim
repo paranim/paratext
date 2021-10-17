@@ -1,12 +1,12 @@
 {.compile: "paratext/stb_truetype.c".}
 
 type
-  stbtt_buf {.bycopy.} = object
+  stbtt_buf* {.bycopy.} = object
     data*: ptr uint8
     cursor*: cint
     size*: cint
 
-  stbtt_fontinfo {.bycopy.} = object
+  stbtt_fontinfo* {.bycopy.} = object
     userdata*: pointer
     data*: ptr uint8          ##  pointer to .ttf file
     fontstart*: cint          ##  offset of start of font
@@ -38,6 +38,7 @@ type
     xadvance*: cfloat
 
   Font*[CharN: static[int]] = object
+    info*: stbtt_fontinfo
     chars*: array[CharN, BakedChar]
     bakeResult*: cint
     ascent*: cint
@@ -68,8 +69,8 @@ proc initFont*(
       bitmapHeight: static[int],
       charCount: static[int]
     ): Font[charCount] =
-  var info = stbtt_fontinfo()
-  doAssert 1 == stbtt_InitFont(info = info.addr, data = ttf, offset = 0)
+  result.info = stbtt_fontinfo()
+  doAssert 1 == stbtt_InitFont(info = result.info.addr, data = ttf, offset = 0)
 
   result.bitmap.width = bitmapWidth
   result.bitmap.height = bitmapHeight
@@ -77,9 +78,9 @@ proc initFont*(
   result.bakeResult = stbtt_BakeFontBitmap(data = ttf, offset = 0, pixelHeight = fontHeight,
                                            pixels = result.bitmap.data[0].addr, pw = result.bitmap.width, ph = result.bitmap.height, firstChar = firstChar,
                                            numChars = charCount, chardata = result.chars[0].addr)
-  stbtt_GetFontVMetrics(info = info.addr, ascent = result.ascent.addr,
+  stbtt_GetFontVMetrics(info = result.info.addr, ascent = result.ascent.addr,
                         descent = result.descent.addr, lineGap = result.lineGap.addr)
-  result.scale = stbtt_ScaleForPixelHeight(info = info.addr, pixels = fontHeight)
+  result.scale = stbtt_ScaleForPixelHeight(info = result.info.addr, pixels = fontHeight)
   result.baseline = result.ascent.cfloat * result.scale
   result.height = fontHeight
   result.firstChar = firstChar
