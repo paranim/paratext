@@ -32,6 +32,13 @@ type
     info*: stbtt_fontinfo
     chars*: array[CharN, CharT]
     bitmap*: tuple[width: cint, height: cint, data: seq[uint8]]
+    bakeResult*: cint
+    ascent*: cint
+    descent*: cint
+    lineGap*: cint
+    scale*: cfloat
+    baseline*: cfloat
+    height*: cfloat
 
   BakedChar* {.bycopy.} = object
     x0*: cushort
@@ -43,13 +50,6 @@ type
     xadvance*: cfloat
 
   BakedFont*[CharN: static[int]] = object of RootFont[CharN, BakedChar]
-    bakeResult*: cint
-    ascent*: cint
-    descent*: cint
-    lineGap*: cint
-    scale*: cfloat
-    baseline*: cfloat
-    height*: cfloat
     firstChar*: cint
 
   Font*[CharN: static[int]] = BakedFont[CharN] # this is for backwards compat
@@ -115,13 +115,6 @@ type
     yoff2*: cfloat
 
   PackedFont*[CharN: static[int]] = object of RootFont[CharN, PackedChar]
-    packResult*: cint
-    ascent*: cint
-    descent*: cint
-    lineGap*: cint
-    scale*: cfloat
-    baseline*: cfloat
-    height*: cfloat
 
 proc stbtt_PackBegin(spc: ptr stbtt_pack_context, pixels: ptr uint8, width: cint, height: cint, stride_in_bytes: cint, padding: cint, alloc_context: pointer): cint {.cdecl, importc.}
 
@@ -146,16 +139,16 @@ proc initFont*(
   result.bitmap.data = newSeq[uint8](bitmapWidth * bitmapHeight)
 
   var ctx: stbtt_pack_context
-  result.packResult = stbtt_PackBegin(spc = ctx.addr, pixels = result.bitmap.data[0].addr, width = result.bitmap.width, height = result.bitmap.height,
+  result.bakeResult = stbtt_PackBegin(spc = ctx.addr, pixels = result.bitmap.data[0].addr, width = result.bitmap.width, height = result.bitmap.height,
                                       stride_in_bytes = 0, padding = 1, alloc_context = nil)
   var numCharsSoFar = 0
   for (firstChar, lastChar) in ranges:
     assert firstChar <= lastChar
     assert numCharsSoFar <= charCount
     let numChars = lastChar - firstChar + 1
-    if result.packResult == 0:
+    if result.bakeResult == 0:
       break
-    result.packResult = stbtt_PackFontRange(spc = ctx.addr, fontdata = ttf, font_index = 0, font_size = fontHeight,
+    result.bakeResult = stbtt_PackFontRange(spc = ctx.addr, fontdata = ttf, font_index = 0, font_size = fontHeight,
                                             first_unicode_char_in_range = firstChar, num_chars_in_range = numChars, result.chars[numCharsSoFar].addr)
     numCharsSoFar += numChars
   stbtt_PackEnd(ctx.addr)
