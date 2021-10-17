@@ -73,7 +73,7 @@ const textFragmentShader =
   }
   """.format(version)
 
-proc initTextEntity*(font: Font): UncompiledTextEntity =
+proc initTextEntity*[N, T](font: RootFont[N, T]): UncompiledTextEntity =
   result.vertexSource = textVertexShader
   result.fragmentSource = textFragmentShader
   # create attribute
@@ -239,13 +239,13 @@ proc `[]=`*(instancedEntity: var UncompiledInstancedTextEntity, i: int, entity: 
   setInstanceAttr(instancedEntity.attributes.a_texture_matrix, i, entity.uniforms.u_texture_matrix)
   setInstanceAttr(instancedEntity.attributes.a_color, i, entity.uniforms.u_color)
 
-proc crop*(entity: var UncompiledTextEntity, bakedChar: BakedChar, x: GLfloat, y: GLfloat) =
+proc crop*(entity: var UncompiledTextEntity, ch: BakedChar | PackedChar, x: GLfloat, y: GLfloat) =
   let
-    cropX = GLfloat(bakedChar.x0)
-    cropY = GLfloat(bakedChar.y0)
-    width = GLfloat(bakedChar.x1 - bakedChar.x0)
-    height = GLfloat(bakedChar.y1 - bakedChar.y0)
+    cropX = GLfloat(ch.x0)
+    cropY = GLfloat(ch.y0)
+    width = GLfloat(ch.x1 - ch.x0)
+    height = GLfloat(ch.y1 - ch.y0)
   entity.crop(cropX, cropY, width, height)
   entity.uniforms.u_scale_matrix.scale(width, height)
-  entity.uniforms.u_translate_matrix.translate(bakedChar.xoff, bakedChar.yoff)
+  entity.uniforms.u_translate_matrix.translate(ch.xoff, ch.yoff)
   entity.uniforms.u_translate_matrix.translate(x, y)
