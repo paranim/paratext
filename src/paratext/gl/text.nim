@@ -2,8 +2,8 @@ import paranim/gl, paranim/gl/uniforms, paranim/gl/attributes
 from paranim/gl/entities import crop
 from paranim/primitives import nil
 import paratext
-import nimgl/opengl
-import glm
+import paranim/opengl
+import paranim/glm
 from strutils import format
 
 const version =
